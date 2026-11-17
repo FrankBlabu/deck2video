@@ -12,6 +12,7 @@ dependencies = [
     "cssselect>=1.2",
     "httpx>=0.27",
     "playwright==1.63.0",
+    "selectolax>=1.0.2",
 ]
 
 [project.scripts]
@@ -39,6 +40,8 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "PT"]
+# E501: the formatter owns line length; RUF001-3: notes are typographic text.
+ignore = ["E501", "RUF001", "RUF002", "RUF003"]
 
 [tool.mypy]
 strict = true
