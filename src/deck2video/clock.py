@@ -26,7 +26,10 @@ from deck2video.render import SlidePage
 
 FPS = 30
 
-CLOCK_JS = files("deck2video").joinpath("js/clock.js").read_text(encoding="utf-8")
+CLOCK_JS = "\n".join(
+    files("deck2video").joinpath(f"js/{name}.js").read_text(encoding="utf-8")
+    for name in ("clock", "effects")
+)
 
 
 def frame_time_ms(index: int, fps: int = FPS) -> float:
