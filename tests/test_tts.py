@@ -59,7 +59,7 @@ def test_alignment_must_reproduce_text() -> None:
 class Counting(FakeAdapter):
     calls = 0
 
-    def synthesize(self, text: str) -> Synthesis:
+    def synthesize(self, text: str, slide_id: str | None = None) -> Synthesis:
         Counting.calls += 1
         return super().synthesize(text)
 
@@ -91,7 +91,7 @@ def test_fake_adapter_is_deterministic(tmp_path: Path) -> None:
 
 def test_word_count_mismatch_is_an_error(tmp_path: Path) -> None:
     class Broken(FakeAdapter):
-        def synthesize(self, text: str) -> Synthesis:
+        def synthesize(self, text: str, slide_id: str | None = None) -> Synthesis:
             s = super().synthesize(text)
             return Synthesis(audio=s.audio, suffix=s.suffix, words=s.words[:-1])
 

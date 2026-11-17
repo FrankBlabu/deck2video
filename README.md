@@ -156,7 +156,11 @@ one camera: when two overlap, the later one takes over.
 | adapter      | use                                                         |
 |--------------|-------------------------------------------------------------|
 | `elevenlabs` | default. Text-to-speech **with timestamps**; character alignment is turned into word timestamps. |
-| `fake`       | offline tones with computed timestamps, for tests, CI and layout work (`--voice-adapter fake`). |
+| `local`      | [Piper](https://github.com/OHF-Voice/piper1-gpl) neural TTS, offline after a one-time voice download; word timestamps by forced alignment. `pip install 'deck2video[local]'` |
+| `recorded`   | your own recording per slide; word timestamps by forced alignment. `pip install 'deck2video[recorded]'` |
+| `fake`       | offline tones with computed timestamps, for tests, CI and layout work. |
+
+Choose one with `--voice-adapter`.
 
 Narration is cached under `~/.cache/deck2video/tts` by a hash of the text, voice, model and
 settings, so a rebuild never pays for the same sentence twice. The API key is read only from
@@ -174,9 +178,55 @@ settings, so a rebuild never pays for the same sentence twice. The API key is re
 Without `--voice` the built-in default is the premade voice "George"
 (`JBFqnCBsd6RMkjVDRZzb`).
 
-A new adapter implements `deck2video.tts.TTSAdapter` (`identity()` and `synthesize(text)`
-returning audio plus one `Word(text, start, end)` per whitespace-separated word) and is
-registered in `deck2video.tts.get_adapter`.
+### The `local` voice (Piper)
+
+```bash
+uv sync --extra local
+uv run deck2video build deck --voice-adapter local -o talk.mp4                  # en_US-lessac-medium
+uv run deck2video build deck --voice-adapter local --voice en_GB-alan-medium -o talk.mp4
+```
+
+`--voice` takes a [Piper voice name](https://huggingface.co/rhasspy/piper-voices). The voice
+(about 60 MB) and the alignment model are downloaded once from Hugging Face into
+`~/.cache/deck2video/`; after that everything runs offline on the CPU.
+
+Licensing: `piper-tts` is GPL-3.0-or-later and each Piper voice has its own licence (see the
+voice's model card). It is an optional extra; deck2video itself stays Apache-2.0 and does not
+bundle Piper.
+
+### The `recorded` voice (your own recordings)
+
+Record each slide's note as written and save it as `recordings/<slide id>.wav` in the deck
+(`.mp3`, `.m4a`, `.flac` and `.ogg` work too; `--recordings DIR` points elsewhere):
+
+```text
+deck/recordings/scale.wav
+deck/recordings/horizon-forge.m4a
+```
+
+```bash
+uv sync --extra recorded
+uv run deck2video build deck --voice-adapter recorded -o talk.mp4
+```
+
+A missing or doubled recording stops the build before anything is rendered. Re-recording a
+slide re-aligns only that slide.
+
+### Forced alignment
+
+`local` and `recorded` get word timestamps the same way: Whisper (faster-whisper, CPU)
+transcribes the audio with word timings, and the transcript is matched to the note word by
+word. Words heard as written take Whisper's times; a differently written run ("1,000" for "a
+thousand") shares the time of what was heard; words Whisper missed are spread over the gap
+between their neighbours; words it invented are ignored. The model is `base.en` by default;
+`--align-model small.en` (or `DECK2VIDEO_ALIGN_MODEL`) is more accurate and slower.
+
+### Writing an adapter
+
+A new adapter implements `deck2video.tts.TTSAdapter`: `identity()`, everything that changes the
+audio (hashed into the cache key, never a secret), and `synthesize(text, slide_id)`, which
+returns audio plus one `Word(text, start, end)` per whitespace-separated word of the text.
+Register it in `deck2video.tts.get_adapter`.
 
 ## Output, timing and determinism
 
@@ -238,6 +288,7 @@ target's bounding box on the 1920×1080 frame. Tests and agents read this instea
 uv sync
 uv run ruff check . && uv run ruff format --check . && uv run mypy && uv run pytest
 uv run pytest -m live          # also calls the real ElevenLabs API (needs the key)
+DECK2VIDEO_TEST_LOCAL_MODELS=1 uv run pytest -m live   # real Piper + Whisper (downloads models)
 ```
 
 CI runs lint, type check and all tests (Chromium and ffmpeg included) on every push to

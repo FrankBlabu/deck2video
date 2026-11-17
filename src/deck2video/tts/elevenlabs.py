@@ -68,7 +68,7 @@ class ElevenLabsAdapter:
             )
         return key
 
-    def synthesize(self, text: str) -> Synthesis:
+    def synthesize(self, text: str, slide_id: str | None = None) -> Synthesis:
         key = self._key()
         url = f"{API}/v1/text-to-speech/{self.voice}/with-timestamps"
         body = {

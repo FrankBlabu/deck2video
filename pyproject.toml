@@ -15,6 +15,12 @@ dependencies = [
     "selectolax>=1.0.2",
 ]
 
+[project.optional-dependencies]
+# `local` voice: Piper (offline neural TTS) plus Whisper-based forced alignment
+local = ["piper-tts>=1.3", "faster-whisper>=1.1"]
+# `recorded` voice: your own recordings plus Whisper-based forced alignment
+recorded = ["faster-whisper>=1.1"]
+
 [project.scripts]
 deck2video = "deck2video.cli:main"
 
@@ -49,7 +55,7 @@ python_version = "3.12"
 files = ["src", "tests"]
 
 [[tool.mypy.overrides]]
-module = ["cssselect.*"]
+module = ["cssselect.*", "faster_whisper.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

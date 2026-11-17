@@ -25,7 +25,7 @@ class FakeAdapter:
     def identity(self) -> dict[str, Any]:
         return {"version": 1, "lead": self.lead, "gap": self.gap, "per_char": self.per_char}
 
-    def synthesize(self, text: str) -> Synthesis:
+    def synthesize(self, text: str, slide_id: str | None = None) -> Synthesis:
         t = self.lead
         out: list[Word] = []
         for token in words(text):
