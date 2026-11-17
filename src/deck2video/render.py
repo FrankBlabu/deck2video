@@ -55,11 +55,11 @@ def page_html(slide: Slide, font_css: str, init_script: str = "") -> str:
     script = f"<script>{init_script}</script>" if init_script else ""
     return (
         "<!doctype html><html><head><meta charset='utf-8'>"
-        f"<title>{html.escape(slide.id)}</title>"
+        f"{script}<title>{html.escape(slide.id)}</title>"
         f"<style id='d2v-fonts'>{font_css}</style>"
         f"<style id='d2v-base'>{BASE_CSS}</style>"
         "<link rel='stylesheet' href='/deck.css'>"
-        f"{script}</head><body><div id='d2v-stage'><div id='d2v-camera'>{slide.html}</div>"
+        f"</head><body><div id='d2v-stage'><div id='d2v-camera'>{slide.html}</div>"
         "<div id='d2v-overlay'></div></div></body></html>"
     )
 
@@ -106,7 +106,12 @@ class Renderer:
                 return candidate
         return None
 
-    def open(self, slide: Slide, init_script: str = "") -> SlidePage:
+    def open(self, slide: Slide, init_script: str | None = None) -> SlidePage:
+        """Load ``slide`` with the virtual clock installed (or a custom ``init_script``)."""
+        if init_script is None:
+            from deck2video.clock import CLOCK_JS
+
+            init_script = CLOCK_JS
         assert self._browser is not None, "use Renderer as a context manager"
         context = self._browser.new_context(
             viewport={"width": WIDTH, "height": HEIGHT},
@@ -147,6 +152,8 @@ class Renderer:
         page.route("**/*", handle)
         page.goto(f"{ORIGIN}/", wait_until="load")
         page.evaluate("() => document.fonts.ready.then(() => true)")
+        if "__d2v" in init_script:
+            page.evaluate("() => window.__d2v.step(0)")
         return SlidePage(page=page, slide=slide, blocked=blocked)
 
 
