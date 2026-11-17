@@ -1,6 +1,6 @@
 // deck2video effects overlay. Python computes each effect's state for the frame (a pure
 // function of virtual time) and calls window.__d2vfx.apply(state). Effects never edit the
-// slide file: the camera is a transform on a wrapper, highlights are overlay elements, and
+// slide file: the camera is CSS zoom on a wrapper, highlights are overlay elements, and
 // reveal sets the target children's opacity at render time only.
 (() => {
   "use strict";
@@ -63,12 +63,18 @@
       const camera = document.getElementById("d2v-camera");
       const overlay = document.getElementById("d2v-overlay");
       overlay.replaceChildren();
-      camera.style.transform = "none";
+      // The camera uses CSS zoom + layout offsets, not a transform: a transform that changes
+      // every frame lets the compositor reuse rasters at an earlier scale, which makes frames
+      // depend on timing. Zoom is laid out and painted at true resolution every frame.
+      camera.style.zoom = "1";
+      camera.style.left = "0px";
+      camera.style.top = "0px";
       const cam = cameraFor(state.camera);
-      camera.style.transform =
-        cam.scale === 1 && cam.tx === 0 && cam.ty === 0
-          ? "none"
-          : `translate(${cam.tx}px, ${cam.ty}px) scale(${cam.scale})`;
+      if (cam.scale !== 1 || cam.tx !== 0 || cam.ty !== 0) {
+        camera.style.zoom = String(cam.scale);
+        camera.style.left = `${cam.tx / cam.scale}px`;
+        camera.style.top = `${cam.ty / cam.scale}px`;
+      }
 
       for (const fx of state.reveals) {
         const kids = [...find(fx.target).children];

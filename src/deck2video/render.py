@@ -26,7 +26,7 @@ ORIGIN = "http://deck2video.invalid"
 BASE_CSS = """
 html, body { margin: 0; padding: 0; width: 1920px; height: 1080px; overflow: hidden; background: #000; }
 #d2v-stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; }
-#d2v-camera { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
+#d2v-camera { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
 #d2v-camera > section { position: relative; width: 1920px; height: 1080px; box-sizing: border-box;
   overflow: hidden; margin: 0; }
 #d2v-camera > section[hidden] { display: block; }

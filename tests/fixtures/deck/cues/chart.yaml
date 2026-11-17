@@ -1,0 +1,13 @@
+- at: "The curve climbs slowly"
+  effect: outline
+  target: "svg polyline"
+  hold: 1s
+- at: "nearly two thirds"
+  effect: zoom
+  target: "svg circle:nth-of-type(4)"
+  scale: 1.8
+  hold: 1.5s
+- at: "the whole point"
+  effect: spotlight
+  target: "img"
+  hold: 0.8s

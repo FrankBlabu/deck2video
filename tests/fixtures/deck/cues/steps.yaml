@@ -1,0 +1,13 @@
+- at: "There are three steps"
+  effect: reveal
+  target: "ul.list"
+  step: 0.8s
+- at: "then we render"
+  effect: pulse
+  target: "ul.list li:nth-of-type(3)"
+  hold: 1s
+- at: "The title says"
+  effect: pan
+  target: "h2.title"
+  scale: 1.3
+  hold: 1.2s
