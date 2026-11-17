@@ -56,7 +56,7 @@ CHROMIUM_ARGS = [
 ]
 
 
-def page_html(slide: Slide, font_css: str, init_script: str = "") -> str:
+def page_html(slide: Slide, font_css: str, init_script: str = "", page_number: int = 1) -> str:
     """The document a slide is rendered in; the slide's markup is inserted verbatim."""
     script = f"<script>{init_script}</script>" if init_script else ""
     return (
@@ -65,7 +65,7 @@ def page_html(slide: Slide, font_css: str, init_script: str = "") -> str:
         f"<style id='d2v-fonts'>{font_css}</style>"
         f"<style id='d2v-base'>{BASE_CSS}</style>"
         "<link rel='stylesheet' href='/deck.css'>"
-        f"</head><body><div id='d2v-stage'><div id='d2v-camera'>{slide.html}</div>"
+        f"</head><body><div id='d2v-stage' style='counter-reset: page {page_number - 1}'><div id='d2v-camera'>{slide.html}</div>"
         "<div id='d2v-overlay'></div></div></body></html>"
     )
 
@@ -112,8 +112,16 @@ class Renderer:
                 return candidate
         return None
 
-    def open(self, slide: Slide, init_script: str | None = None) -> SlidePage:
-        """Load ``slide`` with the virtual clock installed (or a custom ``init_script``)."""
+    def open(
+        self, slide: Slide, init_script: str | None = None, page_number: int | None = None
+    ) -> SlidePage:
+        """Load ``slide`` with the virtual clock installed (or a custom ``init_script``).
+
+        ``page_number`` feeds the deck's ``counter(page)`` (default: position in the deck).
+        """
+        if page_number is None:
+            visible = [s.id for s in self.deck.visible_slides]
+            page_number = visible.index(slide.id) + 1 if slide.id in visible else 1
         if init_script is None:
             from deck2video.clock import CLOCK_JS
 
@@ -130,7 +138,7 @@ class Renderer:
         )
         page = context.new_page()
         blocked: list[str] = []
-        document = page_html(slide, self.font_css, init_script)
+        document = page_html(slide, self.font_css, init_script, page_number)
         css = self.deck.css
 
         def handle(route: Route) -> None:
@@ -164,6 +172,8 @@ class Renderer:
                 return true;
             }"""
         )
+        if "__d2vDrawShapes" in init_script:
+            page.evaluate("() => window.__d2vDrawShapes()")
         if "__d2v" in init_script:
             page.evaluate("() => window.__d2v.step(0)")
         return SlidePage(page=page, slide=slide, blocked=blocked)

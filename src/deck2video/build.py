@@ -116,6 +116,7 @@ def segment_key(
         "quality": (Quality.best() if opts.best else Quality()).model_dump(),
         "fades": fades,
         "fps": FPS,
+        "page": [s.id for s in deck.visible_slides].index(slide.id) + 1,
     }
     return _sha(json.dumps(payload, sort_keys=True).encode())[:24]
 
