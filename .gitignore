@@ -221,3 +221,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# deck2video
+build/
+*.mp4
+*.srt
+*.vtt
+!tests/fixtures/**
