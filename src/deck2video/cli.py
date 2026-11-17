@@ -8,6 +8,13 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from deck2video import __version__
+from deck2video.cues import check_deck
+from deck2video.deck import parse_deck
+from deck2video.problems import Problem
+
+
+def _slides_arg(value: str) -> list[str]:
+    return [s.strip() for s in value.split(",") if s.strip()]
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -20,15 +27,40 @@ def _parser() -> argparse.ArgumentParser:
 
     check = sub.add_parser("check", help="validate a deck and its cues without rendering")
     check.add_argument("deck", type=Path, help="deck directory")
+    check.add_argument("--slides", type=_slides_arg, help="comma-separated slide ids")
 
     build = sub.add_parser("build", help="render the deck to a narrated MP4")
     build.add_argument("deck", type=Path, help="deck directory")
     build.add_argument("-o", "--output", type=Path, default=Path("talk.mp4"))
+    build.add_argument("--slides", type=_slides_arg, help="comma-separated slide ids")
     return parser
+
+
+def report(problems: list[Problem]) -> None:
+    for p in problems:
+        print(f"error: {p}", file=sys.stderr)
+    print(f"{len(problems)} problem(s) found", file=sys.stderr)
+
+
+def run_check(deck_dir: Path, slide_ids: list[str] | None) -> int:
+    deck, problems = parse_deck(deck_dir)
+    if deck is None:
+        report(problems)
+        return 1
+    cues, cue_problems = check_deck(deck, slide_ids)
+    problems += cue_problems
+    if problems:
+        report(problems)
+        return 1
+    n_cues = sum(len(c) for c in cues.values())
+    print(f"ok: {len(cues)} slide(s), {n_cues} cue(s)")
+    return 0
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)
+    if args.command == "check":
+        return run_check(args.deck, args.slides)
     print(f"deck2video {args.command}: not implemented yet", file=sys.stderr)
     return 2
 
