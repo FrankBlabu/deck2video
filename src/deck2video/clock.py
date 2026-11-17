@@ -28,7 +28,7 @@ FPS = 30
 
 CLOCK_JS = "\n".join(
     files("deck2video").joinpath(f"js/{name}.js").read_text(encoding="utf-8")
-    for name in ("clock", "effects")
+    for name in ("clock", "effects", "shapes")
 )
 
 
