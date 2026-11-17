@@ -121,6 +121,7 @@ def test_two_builds_are_identical(built: tuple[Path, BuildReport, BuildReport]) 
     assert first.rendered == second.rendered == ["chart", "steps"]
     for slide in ("chart", "steps"):
         for name in ("timeline.json", "frames.sha256"):
-            a = (tmp / "a" / "build" / slide / name).read_bytes()
-            b = (tmp / "b" / "build" / slide / name).read_bytes()
-            assert a == b, f"{slide}/{name} differs between builds"
+            a = (tmp / "a" / "build" / slide / name).read_text().splitlines()
+            b = (tmp / "b" / "build" / slide / name).read_text().splitlines()
+            differing = [i for i, (x, y) in enumerate(zip(a, b, strict=True)) if x != y]
+            assert not differing, f"{slide}/{name} differs between builds at lines {differing[:20]}"
