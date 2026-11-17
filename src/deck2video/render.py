@@ -26,7 +26,7 @@ ORIGIN = "http://deck2video.invalid"
 BASE_CSS = """
 html, body { margin: 0; padding: 0; width: 1920px; height: 1080px; overflow: hidden; background: #000; }
 #d2v-stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; }
-#d2v-camera { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
+#d2v-camera { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
 #d2v-camera > section { position: relative; width: 1920px; height: 1080px; box-sizing: border-box;
   overflow: hidden; margin: 0; }
 #d2v-camera > section[hidden] { display: block; }
@@ -47,6 +47,12 @@ CHROMIUM_ARGS = [
     "--disable-gpu",
     "--hide-scrollbars",
     "--mute-audio",
+    # determinism: decode images synchronously, finish every compositor stage before a frame
+    "--disable-checker-imaging",
+    "--run-all-compositor-stages-before-draw",
+    "--disable-partial-raster",
+    "--disable-threaded-animation",
+    "--disable-image-animation-resync",
 ]
 
 
@@ -151,7 +157,13 @@ class Renderer:
 
         page.route("**/*", handle)
         page.goto(f"{ORIGIN}/", wait_until="load")
-        page.evaluate("() => document.fonts.ready.then(() => true)")
+        page.evaluate(
+            """async () => {
+                await document.fonts.ready;
+                await Promise.all([...document.images].map((img) => img.decode().catch(() => null)));
+                return true;
+            }"""
+        )
         if "__d2v" in init_script:
             page.evaluate("() => window.__d2v.step(0)")
         return SlidePage(page=page, slide=slide, blocked=blocked)

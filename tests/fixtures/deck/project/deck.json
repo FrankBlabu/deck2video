@@ -1,0 +1,6 @@
+{
+  "v": 5,
+  "title": "deck2video fixture",
+  "order": ["chart", "steps"],
+  "faces": {}
+}
