@@ -43,10 +43,19 @@ def _parser() -> argparse.ArgumentParser:
     )
     build.add_argument("--model", help="ElevenLabs model id (default: eleven_multilingual_v2)")
     build.add_argument(
+        "--recordings",
+        type=Path,
+        help="folder with one recording per slide for --voice-adapter recorded (default: <deck>/recordings)",
+    )
+    build.add_argument(
+        "--align-model",
+        help="Whisper model for forced alignment (local/recorded voices; default: base.en)",
+    )
+    build.add_argument(
         "--voice-adapter",
         choices=ADAPTERS,
         default="elevenlabs",
-        help="narration engine; 'fake' is offline tones for test builds",
+        help="narration: elevenlabs (default), local (Piper, offline), recorded (your audio), fake (test tones)",
     )
     build.add_argument("--best", action="store_true", help="slow, high-quality final encode")
     build.add_argument("--build-dir", type=Path, default=Path("build"))
@@ -92,6 +101,8 @@ def run_build(args: argparse.Namespace) -> int:
         adapter=args.voice_adapter,
         voice=args.voice,
         model=args.model,
+        recordings=args.recordings,
+        align_model=args.align_model,
         best=args.best,
         pad=Pad(lead=args.lead, tail=args.tail),
     )

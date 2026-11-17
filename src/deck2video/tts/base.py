@@ -51,7 +51,9 @@ class TTSAdapter(Protocol):
         """
         ...
 
-    def synthesize(self, text: str) -> Synthesis: ...
+    def synthesize(self, text: str, slide_id: str | None = None) -> Synthesis:
+        """Audio and word timestamps for ``text`` (the note of slide ``slide_id``)."""
+        ...
 
 
 def alignment_to_words(
@@ -90,21 +92,27 @@ class NarrationCache:
     def __init__(self, root: Path) -> None:
         self.root = root
 
-    def key(self, adapter: TTSAdapter, text: str) -> str:
+    def key(self, adapter: TTSAdapter, text: str, slide_id: str | None = None) -> str:
+        identity = adapter.identity()
+        per_slide = getattr(adapter, "slide_identity", None)
+        if per_slide is not None:
+            identity = {**identity, "slide": per_slide(slide_id)}
         payload = json.dumps(
-            {"text": normalize_text(text), "adapter": adapter.name, "identity": adapter.identity()},
+            {"text": normalize_text(text), "adapter": adapter.name, "identity": identity},
             sort_keys=True,
         )
         return hashlib.sha256(payload.encode()).hexdigest()[:24]
 
-    def narrate(self, adapter: TTSAdapter, text: str) -> tuple[Narration, bool]:
+    def narrate(
+        self, adapter: TTSAdapter, text: str, slide_id: str | None = None
+    ) -> tuple[Narration, bool]:
         """Return the narration and whether it came from the cache."""
         text = normalize_text(text)
-        folder = self.root / self.key(adapter, text)
+        folder = self.root / self.key(adapter, text, slide_id)
         meta = folder / "narration.json"
         if meta.is_file():
             return Narration.model_validate_json(meta.read_text(encoding="utf-8")), True
-        result = adapter.synthesize(text)
+        result = adapter.synthesize(text, slide_id)
         expected = words(text)
         got = [w.text for w in result.words]
         if got != expected:

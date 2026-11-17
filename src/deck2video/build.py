@@ -48,6 +48,9 @@ class BuildOptions(BaseModel):
     adapter: str = "elevenlabs"
     voice: str | None = None
     model: str | None = None
+    recordings: Path | None = None
+    """Folder of per-slide recordings for the ``recorded`` voice (default ``<deck>/recordings``)."""
+    align_model: str | None = None
     best: bool = False
     pad: Pad = Pad()
     cache_root: Path | None = None
@@ -134,7 +137,19 @@ def build(opts: BuildOptions, log: Log = print) -> BuildReport:
     cache_root = opts.cache_root or default_cache_root()
     fonts = FontCache(cache_root)
     font_css = fonts.deck_css(deck)
-    adapter: TTSAdapter = get_adapter(opts.adapter, opts.voice, opts.model)
+    adapter: TTSAdapter = get_adapter(
+        opts.adapter,
+        opts.voice,
+        opts.model,
+        recordings=opts.recordings or deck.root / "recordings",
+        cache_root=cache_root,
+        align_model=opts.align_model,
+    )
+    check_voice = getattr(adapter, "problems", None)
+    if check_voice is not None:
+        voice_problems = check_voice([s.id for s in slides])
+        if voice_problems:
+            raise DeckError(voice_problems)
     narrations = NarrationCache(cache_root / "tts")
     quality = Quality.best() if opts.best else Quality()
     pad = opts.pad
@@ -150,14 +165,14 @@ def build(opts: BuildOptions, log: Log = print) -> BuildReport:
         for n, slide in enumerate(slides):
             started = time.monotonic()
             prefix = f"[{n + 1}/{len(slides)}] {slide.id}"
-            narration, narration_cached = narrations.narrate(adapter, slide.note)
+            narration, narration_cached = narrations.narrate(adapter, slide.note, slide.id)
             fade_in = n > 0 and _fades(slides[n - 1])
             fade_out = _fades(slide)
             key = segment_key(
                 deck,
                 slide,
                 cues[slide.id],
-                narrations.key(adapter, slide.note),
+                narrations.key(adapter, slide.note, slide.id),
                 font_css,
                 (fade_in, fade_out),
                 opts,
