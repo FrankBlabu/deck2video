@@ -50,10 +50,13 @@ class ScheduledCue(BaseModel):
     children: int = 0
 
 
-def schedule(cues: list[ResolvedCue], words: list[Word], fps: int = FPS) -> list[ScheduledCue]:
+def schedule(
+    cues: list[ResolvedCue], words: list[Word], fps: int = FPS, offset: float = 0.0
+) -> list[ScheduledCue]:
+    """Start each cue on its anchor word; ``offset`` is where the narration starts (s)."""
     out = []
     for r in cues:
-        anchor = words[r.word_start].start
+        anchor = offset + words[r.word_start].start
         frame = round(anchor * fps)
         out.append(
             ScheduledCue(resolved=r, anchor_time=anchor, start_frame=frame, start=frame / fps)
