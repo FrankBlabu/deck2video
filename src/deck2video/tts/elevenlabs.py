@@ -19,7 +19,10 @@ from deck2video.tts.base import Synthesis, TTSError, alignment_to_words
 API = "https://api.elevenlabs.io"
 DEFAULT_VOICE = "JBFqnCBsd6RMkjVDRZzb"
 """ElevenLabs premade voice "George" (warm, British, narration)."""
-DEFAULT_MODEL = "eleven_multilingual_v2"
+DEFAULT_MODEL = "eleven_v3"
+"""Carries the flow of a whole note across sentences far better than eleven_multilingual_v2."""
+MAX_CHARS = {"eleven_v3": 5000, "eleven_multilingual_v2": 10000}
+"""Characters per request; a note is always sent whole, so it must fit."""
 OUTPUT_FORMAT = "mp3_44100_128"
 ADAPTER_VERSION = 1
 
@@ -69,6 +72,13 @@ class ElevenLabsAdapter:
         return key
 
     def synthesize(self, text: str, slide_id: str | None = None) -> Synthesis:
+        limit = MAX_CHARS.get(self.model)
+        if limit is not None and len(text) > limit:
+            where = f"slide {slide_id!r}: " if slide_id else ""
+            raise TTSError(
+                f"{where}the note has {len(text)} characters; {self.model} reads at most {limit} "
+                "in one request. Shorten the note: it is narrated in one piece so the speech flows."
+            )
         key = self._key()
         url = f"{API}/v1/text-to-speech/{self.voice}/with-timestamps"
         body = {
