@@ -155,7 +155,7 @@ one camera: when two overlap, the later one takes over.
 
 | adapter      | use                                                         |
 |--------------|-------------------------------------------------------------|
-| `elevenlabs` | default. Text-to-speech **with timestamps**; character alignment is turned into word timestamps. |
+| `elevenlabs` | default. Text-to-speech **with timestamps** (model `eleven_v3`); each note is read in one request, and the character alignment is turned into word timestamps. |
 | `local`      | [Piper](https://github.com/OHF-Voice/piper1-gpl) neural TTS, offline after a one-time voice download; word timestamps by forced alignment. `pip install 'deck2video[local]'` |
 | `recorded`   | your own recording per slide; word timestamps by forced alignment. `pip install 'deck2video[recorded]'` |
 | `fake`       | offline tones with computed timestamps, for tests, CI and layout work. |
@@ -170,8 +170,9 @@ settings, so a rebuild never pays for the same sentence twice. The API key is re
 
 1. Pick a voice in the ElevenLabs voice library and copy its **voice id**.
 2. Use it for one build with `--voice <id>`, or for all builds with
-   `export ELEVENLABS_VOICE_ID=<id>`. The model is `eleven_multilingual_v2` unless
-   `--model` / `ELEVENLABS_MODEL_ID` say otherwise.
+   `export ELEVENLABS_VOICE_ID=<id>`. The model is `eleven_v3` unless
+   `--model` / `ELEVENLABS_MODEL_ID` say otherwise (`eleven_multilingual_v2` is the older,
+   less expressive alternative).
 3. Prototype on one or two slides (`--slides a,b`) before the whole deck: a changed voice
    re-narrates every slide, which costs ElevenLabs characters.
 

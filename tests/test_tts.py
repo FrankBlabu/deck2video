@@ -126,8 +126,16 @@ def test_elevenlabs_request_and_response() -> None:
     assert req.url.path == "/v1/text-to-speech/v123/with-timestamps"
     assert req.url.params["output_format"] == "mp3_44100_128"
     assert req.headers["xi-api-key"] == "secret-key"
-    assert json.loads(req.content)["model_id"] == "eleven_multilingual_v2"
+    assert json.loads(req.content)["model_id"] == "eleven_v3"
     assert "secret-key" not in json.dumps(adapter.identity())
+
+
+def test_elevenlabs_note_must_fit_one_request() -> None:
+    adapter = ElevenLabsAdapter(api_key="k", client=mock_client(lambda r: httpx.Response(500)))
+    with pytest.raises(
+        TTSError, match=r"slide 'long': the note has 5001 characters; eleven_v3 reads at most 5000"
+    ):
+        adapter.synthesize("x" * 5001, "long")
 
 
 def test_elevenlabs_retries_on_429_and_5xx() -> None:

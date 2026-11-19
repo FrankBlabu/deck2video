@@ -41,7 +41,7 @@ def _parser() -> argparse.ArgumentParser:
     build.add_argument(
         "--voice", help="ElevenLabs voice id (default: $ELEVENLABS_VOICE_ID or a built-in voice)"
     )
-    build.add_argument("--model", help="ElevenLabs model id (default: eleven_multilingual_v2)")
+    build.add_argument("--model", help="ElevenLabs model id (default: eleven_v3)")
     build.add_argument(
         "--recordings",
         type=Path,
